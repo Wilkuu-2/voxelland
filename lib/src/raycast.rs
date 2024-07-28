@@ -1,15 +1,15 @@
-
-
-
-
+use glam::Vec3;
 use std::sync::RwLock;
-use glam::{Vec3};
 
 use crate::chunk::ChunkSystem;
 use crate::vec::IVec3;
 
-
-pub fn raycast_voxel(origin: Vec3, direction: Vec3, csys: &RwLock<ChunkSystem>, max_distance: f32) -> Option<(Vec3, IVec3)> {
+pub fn raycast_voxel(
+    origin: Vec3,
+    direction: Vec3,
+    csys: &RwLock<ChunkSystem>,
+    max_distance: f32,
+) -> Option<(Vec3, IVec3)> {
     let step_size = 0.1; // Smaller step sizes increase accuracy but decrease performance
     let direction = direction.normalize(); // Ensure the direction vector is normalized
     let mut current_pos = origin;
@@ -33,9 +33,14 @@ pub fn raycast_voxel(origin: Vec3, direction: Vec3, csys: &RwLock<ChunkSystem>, 
     None
 }
 
-pub fn raycast_voxel_with_bob(origin: Vec3, direction: Vec3, csys: &RwLock<ChunkSystem>, max_distance: f32, walkbob: f32) -> Option<(Vec3, IVec3)> {
-    
-    let bob = Vec3::new(0.0, walkbob.sin() /20.0, 0.0) + Vec3::new(0.0, 0.3, 0.0);
+pub fn raycast_voxel_with_bob(
+    origin: Vec3,
+    direction: Vec3,
+    csys: &RwLock<ChunkSystem>,
+    max_distance: f32,
+    walkbob: f32,
+) -> Option<(Vec3, IVec3)> {
+    let bob = Vec3::new(0.0, walkbob.sin() / 20.0, 0.0) + Vec3::new(0.0, 0.3, 0.0);
 
     //info!("Raycasting with a {}, {}, {} origin shift for bob", bob.x, bob.y, bob.z);
     raycast_voxel(origin + bob, direction, csys, max_distance)

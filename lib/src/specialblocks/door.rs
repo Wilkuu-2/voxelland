@@ -4,38 +4,21 @@ use crate::specialblocks::vertexutils::rotate_coordinates_around_y_negative_90;
 use crate::textureface::TextureFace;
 use crate::textureface::TEXTURE_WIDTH;
 
-
-
-
-
-
-
-
-
-pub struct DoorInfo {
-    
-}
+pub struct DoorInfo {}
 
 pub const DOOROPEN_BITS: u32 = 0b0000_0000_0000_0100_0000_0000_0000_0000;
 pub const DOORTOP_BITS: u32 = 0b0000_0000_0000_1000_0000_0000_0000_0000;
 
 pub const OPPOSITEDOOR_BITS: u32 = 0b0000_0000_0001_0000_0000_0000_0000_0000;
 
-
-
-
-
 impl DoorInfo {
-
-
-
     pub fn door_model_from_index(index: usize) -> &'static Vec<f32> {
         static models: Lazy<Vec<Vec<f32>>> = Lazy::new(|| {
             vec![
                 DoorInfo::base_door_model().to_vec(),
                 rotate_coordinates_around_y_negative_90(DoorInfo::base_door_model(), 1),
                 rotate_coordinates_around_y_negative_90(DoorInfo::base_door_model(), 2),
-                rotate_coordinates_around_y_negative_90(DoorInfo::base_door_model(), 3)
+                rotate_coordinates_around_y_negative_90(DoorInfo::base_door_model(), 3),
             ]
         });
         &(*models)[index]
@@ -71,53 +54,126 @@ impl DoorInfo {
         let side = TextureFace::new(12, 0);
 
         let uvs = vec![
-            face.blx, face.bly,face.brx, face.bry,
-            face.brx, face.bry,face.brx, face.bry,
-            face.trx, face.tr_y,face.brx, face.bry,
-
-            face.trx, face.tr_y,face.trx, face.tr_y,
-            face.tlx, face.tly,face.trx, face.tr_y,
-            face.blx, face.bly,face.trx, face.tr_y,//front
-            
-            
-            side.brx, side.bry, side.trx, side.tr_y,
-            side.trx, side.tr_y, side.trx, side.tr_y,
-            side.brx-(TEXTURE_WIDTH/4.0), side.tr_y, side.trx, side.tr_y,
-            
-            side.brx-(TEXTURE_WIDTH/4.0), side.tr_y, side.trx, side.tr_y,
-            side.brx-(TEXTURE_WIDTH/4.0), side.bry, side.trx, side.tr_y,
-            side.brx, side.bry, side.trx, side.tr_y,//left  
-            
-            
-
-            
-            side.brx, side.bry, side.trx, side.tr_y,
-            side.trx, side.tr_y, side.trx, side.tr_y,
-            side.brx-(TEXTURE_WIDTH/4.0), side.tr_y, side.trx, side.tr_y,
-
-            side.brx-(TEXTURE_WIDTH/4.0), side.tr_y, side.trx, side.tr_y,
-            side.brx-(TEXTURE_WIDTH/4.0), side.bry, side.trx, side.tr_y,
-            side.brx, side.bry, side.trx, side.tr_y,//top
-            
-            
-
-            side.brx, side.bry, side.trx, side.tr_y,
-            side.trx, side.tr_y, side.trx, side.tr_y,
-            side.brx-(TEXTURE_WIDTH/4.0), side.tr_y, side.trx, side.tr_y,
-
-            side.brx-(TEXTURE_WIDTH/4.0), side.tr_y, side.trx, side.tr_y,
-            side.brx-(TEXTURE_WIDTH/4.0), side.bry, side.trx, side.tr_y,
-            side.brx, side.bry, side.trx, side.tr_y,//right
-            
-            
-
-            face.blx, face.bly, face.blx, face.bly,
-            face.brx, face.bry, face.blx, face.bly,
-            face.trx, face.tr_y,face.blx, face.bly,
-
-            face.trx, face.tr_y,face.blx, face.bly,
-            face.tlx, face.tly,face.blx, face.bly,
-            face.blx, face.bly,face.blx, face.bly,//back
+            face.blx,
+            face.bly,
+            face.brx,
+            face.bry,
+            face.brx,
+            face.bry,
+            face.brx,
+            face.bry,
+            face.trx,
+            face.tr_y,
+            face.brx,
+            face.bry,
+            face.trx,
+            face.tr_y,
+            face.trx,
+            face.tr_y,
+            face.tlx,
+            face.tly,
+            face.trx,
+            face.tr_y,
+            face.blx,
+            face.bly,
+            face.trx,
+            face.tr_y, //front
+            side.brx,
+            side.bry,
+            side.trx,
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.bry,
+            side.trx,
+            side.tr_y,
+            side.brx,
+            side.bry,
+            side.trx,
+            side.tr_y, //left
+            side.brx,
+            side.bry,
+            side.trx,
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.bry,
+            side.trx,
+            side.tr_y,
+            side.brx,
+            side.bry,
+            side.trx,
+            side.tr_y, //top
+            side.brx,
+            side.bry,
+            side.trx,
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.tr_y,
+            side.trx,
+            side.tr_y,
+            side.brx - (TEXTURE_WIDTH / 4.0),
+            side.bry,
+            side.trx,
+            side.tr_y,
+            side.brx,
+            side.bry,
+            side.trx,
+            side.tr_y, //right
+            face.blx,
+            face.bly,
+            face.blx,
+            face.bly,
+            face.brx,
+            face.bry,
+            face.blx,
+            face.bly,
+            face.trx,
+            face.tr_y,
+            face.blx,
+            face.bly,
+            face.trx,
+            face.tr_y,
+            face.blx,
+            face.bly,
+            face.tlx,
+            face.tly,
+            face.blx,
+            face.bly,
+            face.blx,
+            face.bly,
+            face.blx,
+            face.bly, //back
         ];
         uvs
     }
@@ -125,44 +181,18 @@ impl DoorInfo {
     pub fn base_door_model() -> &'static [f32] {
         static player_is_minus_z: [f32; 150] = [
             0.0, 0.0, 0.0, 0.0, 16.0, // front
-            1.0, 0.0, 0.0, 0.0, 16.0,
-            1.0, 1.0, 0.0, 0.0, 16.0,
-    
-            1.0, 1.0, 0.0, 0.0, 16.0,
-            0.0, 1.0, 0.0, 0.0, 16.0,
-            0.0, 0.0, 0.0, 0.0, 16.0,
-    
-            0.0, 0.0, 0.0, 0.0, 16.0,
-            0.0, 1.0, 0.0, 0.0, 16.0,
-            0.0, 1.0, 0.25, 0.0, 16.0,
-    
-            0.0, 1.0, 0.25, 0.0, 16.0,
-            0.0, 0.0, 0.25, 0.0, 16.0,
+            1.0, 0.0, 0.0, 0.0, 16.0, 1.0, 1.0, 0.0, 0.0, 16.0, 1.0, 1.0, 0.0, 0.0, 16.0, 0.0, 1.0,
+            0.0, 0.0, 16.0, 0.0, 0.0, 0.0, 0.0, 16.0, 0.0, 0.0, 0.0, 0.0, 16.0, 0.0, 1.0, 0.0, 0.0,
+            16.0, 0.0, 1.0, 0.25, 0.0, 16.0, 0.0, 1.0, 0.25, 0.0, 16.0, 0.0, 0.0, 0.25, 0.0, 16.0,
             0.0, 0.0, 0.0, 0.0, 16.0, // left
-            
-            0.0, 1.0, 0.0, 0.0, 16.0,
-            1.0, 1.0, 0.0, 0.0, 16.0,
-            1.0, 1.0, 0.25, 0.0, 16.0,
-    
-            1.0, 1.0, 0.25, 0.0, 16.0,
-            0.0, 1.0, 0.25, 0.0, 16.0,
-            0.0, 1.0, 0.0, 0.0, 16.0, // top
-            
-            1.0, 1.0, 0.0, 0.0, 16.0,
-            1.0, 0.0, 0.0, 0.0, 16.0,
-            1.0, 0.0, 0.25, 0.0, 16.0,
-    
-            1.0, 0.0, 0.25, 0.0, 16.0,
-            1.0, 1.0, 0.25, 0.0, 16.0,
-            1.0, 1.0, 0.0, 0.0, 16.0, // right
-    
-            1.0, 0.0, 0.25, 0.0, 16.0,
-            0.0, 0.0, 0.25, 0.0, 16.0,
-            0.0, 1.0, 0.25, 0.0, 16.0,
-    
-            0.0, 1.0, 0.25, 0.0, 16.0,
-            1.0, 1.0, 0.25, 0.0, 16.0,
-            1.0, 0.0, 0.25, 0.0, 16.0, // back
+            0.0, 1.0, 0.0, 0.0, 16.0, 1.0, 1.0, 0.0, 0.0, 16.0, 1.0, 1.0, 0.25, 0.0, 16.0, 1.0,
+            1.0, 0.25, 0.0, 16.0, 0.0, 1.0, 0.25, 0.0, 16.0, 0.0, 1.0, 0.0, 0.0, 16.0, // top
+            1.0, 1.0, 0.0, 0.0, 16.0, 1.0, 0.0, 0.0, 0.0, 16.0, 1.0, 0.0, 0.25, 0.0, 16.0, 1.0,
+            0.0, 0.25, 0.0, 16.0, 1.0, 1.0, 0.25, 0.0, 16.0, 1.0, 1.0, 0.0, 0.0,
+            16.0, // right
+            1.0, 0.0, 0.25, 0.0, 16.0, 0.0, 0.0, 0.25, 0.0, 16.0, 0.0, 1.0, 0.25, 0.0, 16.0, 0.0,
+            1.0, 0.25, 0.0, 16.0, 1.0, 1.0, 0.25, 0.0, 16.0, 1.0, 0.0, 0.25, 0.0,
+            16.0, // back
         ];
         &player_is_minus_z
     }

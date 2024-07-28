@@ -49,19 +49,20 @@ impl FromStr for IVec3 {
             Ok(IVec3::new(
                 i32::from_str(x).unwrap(),
                 i32::from_str(y).unwrap(),
-                i32::from_str(z).unwrap()))
+                i32::from_str(z).unwrap(),
+            ))
         } else {
             Err(String::from("Error"))
         }
     }
-    
+
     type Err = String;
 }
 
 impl Display for IVec3 {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(f, "{} {} {}", self.x, self.y, self.z)
-    } 
+    }
 }
 
 impl Add for IVec3 {
@@ -92,19 +93,12 @@ impl Sub for IVec3 {
 
 impl IVec3 {
     pub const fn new(x: i32, y: i32, z: i32) -> IVec3 {
-        IVec3 {
-            x,
-            y,
-            z
-        }
+        IVec3 { x, y, z }
     }
 }
 
 impl IVec2 {
     pub const fn new(x: i32, y: i32) -> IVec2 {
-        IVec2 {
-            x,
-            y
-        }
+        IVec2 { x, y }
     }
 }

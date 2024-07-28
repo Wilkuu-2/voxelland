@@ -1,5 +1,3 @@
-
-
 pub fn rotate_coordinates_around_y_negative_90(coords: &[f32], num_rotations: i32) -> Vec<f32> {
     if coords.len() % 5 != 0 {
         // Do nothing for now

@@ -1,4 +1,4 @@
-use std::{sync::*};
+use std::sync::*;
 
 use gl::types::{GLuint, GLvoid};
 use glam::{Mat4, Vec3};
@@ -6,12 +6,18 @@ use glfw::ffi::glfwGetTime;
 use lockfree::queue::Queue;
 use rand::{rngs::StdRng, Rng, SeedableRng};
 
+use crate::{
+    camera::Camera,
+    chunk::ChunkSystem,
+    collisioncage::{BoundBox, CollCage, Side},
+    game::Game,
+    server_types::Message,
+    shader::Shader,
+    vec,
+};
 use tracing::info;
-use crate::{camera::Camera, chunk::ChunkSystem, collisioncage::{BoundBox, CollCage, Side}, game::Game, server_types::Message, shader::Shader, vec};
 
 use crate::inventory::Inventory;
-
-
 
 pub struct Drop {
     position: Vec3,
@@ -22,13 +28,12 @@ pub struct Drop {
     velocity: Vec3,
     bound_box: BoundBox,
     to_be_deleted: bool,
-    amount: u32
+    amount: u32,
 }
 
 impl Drop {
     pub fn new(block_id: u32, position: Vec3, csys: &Arc<RwLock<ChunkSystem>>, amt: u32) -> Drop {
-
-        let solid_pred: Box<dyn Fn(vec::IVec3) -> bool  + Send + Sync> = {
+        let solid_pred: Box<dyn Fn(vec::IVec3) -> bool + Send + Sync> = {
             let csys_arc = Arc::clone(&csys);
             Box::new(move |v: vec::IVec3| {
                 return csys_arc.read().unwrap().collision_predicate(v);
@@ -44,13 +49,10 @@ impl Drop {
             velocity: Vec3::new(0.0, 0.0, 0.0),
             bound_box: BoundBox::new(position),
             to_be_deleted: false,
-            amount: amt
+            amount: amt,
         }
     }
 }
-
-
-
 
 pub struct Drops {
     pub shader: Shader,
@@ -61,13 +63,18 @@ pub struct Drops {
     pub inv: Arc<RwLock<Inventory>>,
 
     pub in_multiplayer: bool,
-    pub needtosend: Arc<Queue<Message>>
+    pub needtosend: Arc<Queue<Message>>,
 }
 
 impl Drops {
-
-    pub fn new(texture: GLuint, cam: &Arc<Mutex<Camera>>, csys: &Arc<RwLock<ChunkSystem>>, inv: &Arc<RwLock<Inventory>>, in_m: bool, needtosend: &Arc<Queue<Message>>) -> Drops {
-
+    pub fn new(
+        texture: GLuint,
+        cam: &Arc<Mutex<Camera>>,
+        csys: &Arc<RwLock<ChunkSystem>>,
+        inv: &Arc<RwLock<Inventory>>,
+        in_m: bool,
+        needtosend: &Arc<Queue<Message>>,
+    ) -> Drops {
         let shader = Shader::new("assets/dropvert.glsl", "assets/dropfrag.glsl");
         let mut vbo: GLuint = 0;
         unsafe {
@@ -75,69 +82,46 @@ impl Drops {
             gl::CreateBuffers(1, &mut vbo);
             gl::BindTextureUnit(0, texture);
             let faces: [f32; 144] = [
-
-            
-            -0.5, -0.5, 0.5, 0.0,
-            -0.5, -0.5, -0.5, 1.0,
-            -0.5, 0.5, -0.5, 2.0,
-    
-            -0.5, 0.5, -0.5, 2.0,
-            -0.5, 0.5, 0.5, 3.0,
-            -0.5, -0.5, 0.5, 0.0,
-    
-                    0.5, -0.5, -0.5, 0.0,
-                    0.5, -0.5, 0.5, 1.0,
-                    0.5, 0.5, 0.5,2.0,
-    
-                    0.5, 0.5, 0.5, 2.0,
-                    0.5, 0.5, -0.5, 3.0,
-                    0.5, -0.5, -0.5,0.0,
-    
-            0.5, -0.5, 0.5, 0.0,
-            -0.5, -0.5, 0.5,1.0,
-            -0.5, 0.5, 0.5, 2.0,
-    
-            -0.5, 0.5, 0.5, 2.0,
-            0.5, 0.5, 0.5,  3.0,
-            0.5, -0.5, 0.5, 0.0,
-    
-                    -0.5, -0.5, -0.5, 0.0,
-                    0.5, -0.5, -0.5,1.0,
-                    0.5, 0.5, -0.5,2.0,
-    
-                    0.5, 0.5, -0.5, 2.0,
-                    -0.5, 0.5, -0.5, 3.0,
-                    -0.5, -0.5, -0.5,0.0,
-    
-            -0.5, 0.5, -0.5, 0.0,
-            0.5, 0.5, -0.5,1.0,
-            0.5, 0.5, 0.5,2.0,
-    
-            0.5, 0.5, 0.5, 2.0,
-            -0.5, 0.5, 0.5, 3.0,
-            -0.5, 0.5, -0.5,0.0,
-    
-                    0.5, -0.5, -0.5, 0.0,
-                    -0.5, -0.5, -0.5,1.0,
-                    -0.5, -0.5, 0.5,2.0,
-    
-                    -0.5, -0.5, 0.5, 2.0,
-                    0.5, -0.5, 0.5, 3.0,
-                    0.5, -0.5, -0.5,0.0,
-        
+                -0.5, -0.5, 0.5, 0.0, -0.5, -0.5, -0.5, 1.0, -0.5, 0.5, -0.5, 2.0, -0.5, 0.5, -0.5,
+                2.0, -0.5, 0.5, 0.5, 3.0, -0.5, -0.5, 0.5, 0.0, 0.5, -0.5, -0.5, 0.0, 0.5, -0.5,
+                0.5, 1.0, 0.5, 0.5, 0.5, 2.0, 0.5, 0.5, 0.5, 2.0, 0.5, 0.5, -0.5, 3.0, 0.5, -0.5,
+                -0.5, 0.0, 0.5, -0.5, 0.5, 0.0, -0.5, -0.5, 0.5, 1.0, -0.5, 0.5, 0.5, 2.0, -0.5,
+                0.5, 0.5, 2.0, 0.5, 0.5, 0.5, 3.0, 0.5, -0.5, 0.5, 0.0, -0.5, -0.5, -0.5, 0.0, 0.5,
+                -0.5, -0.5, 1.0, 0.5, 0.5, -0.5, 2.0, 0.5, 0.5, -0.5, 2.0, -0.5, 0.5, -0.5, 3.0,
+                -0.5, -0.5, -0.5, 0.0, -0.5, 0.5, -0.5, 0.0, 0.5, 0.5, -0.5, 1.0, 0.5, 0.5, 0.5,
+                2.0, 0.5, 0.5, 0.5, 2.0, -0.5, 0.5, 0.5, 3.0, -0.5, 0.5, -0.5, 0.0, 0.5, -0.5,
+                -0.5, 0.0, -0.5, -0.5, -0.5, 1.0, -0.5, -0.5, 0.5, 2.0, -0.5, -0.5, 0.5, 2.0, 0.5,
+                -0.5, 0.5, 3.0, 0.5, -0.5, -0.5, 0.0,
             ];
 
-            gl::NamedBufferData(vbo, (faces.len() * std::mem::size_of::<f32>()) as isize, faces.as_ptr() as *const GLvoid, gl::STATIC_DRAW);
-            
-            gl::VertexArrayVertexBuffer(shader.vao, 0, vbo, 0, (4 * std::mem::size_of::<f32>()) as i32);
+            gl::NamedBufferData(
+                vbo,
+                (faces.len() * std::mem::size_of::<f32>()) as isize,
+                faces.as_ptr() as *const GLvoid,
+                gl::STATIC_DRAW,
+            );
+
+            gl::VertexArrayVertexBuffer(
+                shader.vao,
+                0,
+                vbo,
+                0,
+                (4 * std::mem::size_of::<f32>()) as i32,
+            );
             gl::EnableVertexArrayAttrib(shader.vao, 0);
             gl::VertexArrayAttribFormat(shader.vao, 0, 3, gl::FLOAT, gl::FALSE, 0);
             gl::VertexArrayAttribBinding(shader.vao, 0, 0);
 
             gl::EnableVertexArrayAttrib(shader.vao, 1);
-            gl::VertexArrayAttribFormat(shader.vao, 1, 1, gl::FLOAT, gl::FALSE, 3 * std::mem::size_of::<f32>() as u32);
+            gl::VertexArrayAttribFormat(
+                shader.vao,
+                1,
+                1,
+                gl::FLOAT,
+                gl::FALSE,
+                3 * std::mem::size_of::<f32>() as u32,
+            );
             gl::VertexArrayAttribBinding(shader.vao, 1, 0);
-
         }
         Drops {
             shader,
@@ -147,7 +131,7 @@ impl Drops {
             csys: csys.clone(),
             inv: inv.clone(),
             in_multiplayer: in_m,
-            needtosend: needtosend.clone()
+            needtosend: needtosend.clone(),
         }
     }
 
@@ -174,12 +158,21 @@ impl Drops {
             gl::UseProgram(self.shader.shader_id);
             //info!("Drawing {} drops", self.drops.len());
             for drop in &self.drops {
-                let pos_loc = gl::GetUniformLocation(self.shader.shader_id, b"pos\0".as_ptr() as *const i8);
-                let time_loc = gl::GetUniformLocation(self.shader.shader_id, b"time\0".as_ptr() as *const i8);
-                let blockid_loc = gl::GetUniformLocation(self.shader.shader_id, b"blockID\0".as_ptr() as *const i8);
-                let tex_loc = gl::GetUniformLocation(self.shader.shader_id, b"ourTexture\0".as_ptr() as *const i8);
+                let pos_loc =
+                    gl::GetUniformLocation(self.shader.shader_id, b"pos\0".as_ptr() as *const i8);
+                let time_loc =
+                    gl::GetUniformLocation(self.shader.shader_id, b"time\0".as_ptr() as *const i8);
+                let blockid_loc = gl::GetUniformLocation(
+                    self.shader.shader_id,
+                    b"blockID\0".as_ptr() as *const i8,
+                );
+                let tex_loc = gl::GetUniformLocation(
+                    self.shader.shader_id,
+                    b"ourTexture\0".as_ptr() as *const i8,
+                );
                 //info!("Drop at {} {} {}", drop.position.x, drop.position.y, drop.position.z);
-                let mvp_loc = gl::GetUniformLocation(self.shader.shader_id, b"mvp\0".as_ptr() as *const i8);
+                let mvp_loc =
+                    gl::GetUniformLocation(self.shader.shader_id, b"mvp\0".as_ptr() as *const i8);
 
                 gl::UniformMatrix4fv(mvp_loc, 1, gl::FALSE, mvp.to_cols_array().as_ptr());
 
@@ -187,11 +180,10 @@ impl Drops {
                 gl::Uniform1f(time_loc, glfwGetTime() as f32);
                 gl::Uniform1f(blockid_loc, drop.block_id as f32);
                 gl::Uniform1i(tex_loc, 0);
-                gl::DrawArrays(gl::TRIANGLES, 0, 144/4);
+                gl::DrawArrays(gl::TRIANGLES, 0, 144 / 4);
             }
             gl::Enable(gl::CULL_FACE);
         }
-        
     }
 
     pub fn update_drops(&mut self, delta_time: &f32) {
@@ -203,22 +195,19 @@ impl Drops {
 
             const GRAV: f32 = 9.8;
 
-            if !drop.grounded  {
+            if !drop.grounded {
                 drop.time_falling_scalar = (drop.time_falling_scalar + delta_time * 5.0).min(3.0);
             } else {
                 drop.time_falling_scalar = 1.0;
             }
-    
-            if !drop.grounded {
-                drop.velocity +=
-                    Vec3::new(0.0, -GRAV * drop.time_falling_scalar * delta_time, 0.0);
-            }
-    
 
+            if !drop.grounded {
+                drop.velocity += Vec3::new(0.0, -GRAV * drop.time_falling_scalar * delta_time, 0.0);
+            }
 
             let cc_center = drop.position;
             drop.coll_cage.update_readings(cc_center);
-            
+
             let campos = self.cam.lock().unwrap().position - Vec3::new(0.0, 1.0, 0.0);
             if (drop.position).distance(campos) < 4.0 {
                 let diff = campos - drop.position;
@@ -233,29 +222,31 @@ impl Drops {
             }
 
             if (drop.position).distance(campos) < 1.0 {
-                match Game::add_to_inventory(&self.inv, drop.block_id, drop.amount, self.in_multiplayer, &self.needtosend) {
+                match Game::add_to_inventory(
+                    &self.inv,
+                    drop.block_id,
+                    drop.amount,
+                    self.in_multiplayer,
+                    &self.needtosend,
+                ) {
                     Ok(_t) => {
                         to_remove_indices.push(index);
                         info!("Picked up {} {}", drop.block_id, drop.amount);
-                    },
-                    Err(_t) => {
-
                     }
+                    Err(_t) => {}
                 }
-                
             }
-            
+
             let mut proposed = if drop.velocity.length() > 0.0 {
                 let amt_to_subtract = drop.velocity * *delta_time * 5.0;
                 drop.velocity -= amt_to_subtract;
-    
+
                 drop.position + amt_to_subtract
             } else {
                 drop.position
             };
 
-            drop.bound_box
-                .set_center(proposed, 0.2, 0.2);
+            drop.bound_box.set_center(proposed, 0.2, 0.2);
 
             drop.coll_cage.update_colliding(&drop.bound_box);
 
@@ -271,7 +262,6 @@ impl Drops {
                         drop.grounded = true;
                     }
                     if *side == Side::ROOF {
-
                         drop.grounded = false;
                     }
                 }
@@ -283,9 +273,4 @@ impl Drops {
             self.drops.remove(index);
         }
     }
-
-
-
-
 }
-

@@ -1,19 +1,15 @@
-
+use std::fs::File;
+use tracing::{error, info};
+use tracing_appender::non_blocking::{self, WorkerGuard};
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use tracing_subscriber::fmt::Subscriber;
-use tracing_appender::non_blocking::{self, WorkerGuard};
-use tracing::{error, info};
-use std::fs::File;
 
 use voxelland::windowandkey::{uncapkb, WindowAndKeyContext};
 
 use voxelland::game::{Game, DECIDEDSPORMP, SHOULDRUN};
 
-
-
 fn main() {
-
     // Create a non-blocking, asynchronous file writer
     let file = File::create("app.log").expect("Unable to create log file");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file);
@@ -24,8 +20,7 @@ fn main() {
         .with_span_events(FmtSpan::CLOSE)
         .finish();
 
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("setting default subscriber failed");
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 
     // Capture the default panic hook
     let default_hook = std::panic::take_hook();
@@ -49,8 +44,6 @@ fn main() {
         }
     }));
 
-    
-
     let mut wak_context = WindowAndKeyContext::new("Distant Garden", 1280, 720);
 
     unsafe {
@@ -62,11 +55,14 @@ fn main() {
             }
         }
     }
-    
 
-    
-
-    let gameh = Game::new(&wak_context.window, true, false, &wak_context.addressentered, &wak_context.serveraddress);
+    let gameh = Game::new(
+        &wak_context.window,
+        true,
+        false,
+        &wak_context.addressentered,
+        &wak_context.serveraddress,
+    );
 
     while !gameh.is_finished() {
         if !wak_context.window.read().unwrap().should_close() {
@@ -74,9 +70,7 @@ fn main() {
         } else {
             return ();
         }
-        
     }
-
 
     let game: Game;
 
@@ -93,7 +87,11 @@ fn main() {
 
     wak_context.game = Some(game);
 
-    let handle = wak_context.game.as_mut().unwrap().initialize_being_in_world();
+    let handle = wak_context
+        .game
+        .as_mut()
+        .unwrap()
+        .initialize_being_in_world();
 
     while !handle.is_finished() {
         if !wak_context.window.read().unwrap().should_close() {
@@ -105,24 +103,36 @@ fn main() {
 
     match handle.join() {
         Ok(_) => {
-            wak_context.game.as_mut().unwrap().loadedworld.store(true, std::sync::atomic::Ordering::Relaxed);
+            wak_context
+                .game
+                .as_mut()
+                .unwrap()
+                .loadedworld
+                .store(true, std::sync::atomic::Ordering::Relaxed);
         }
-        Err(_e) => {
-
-        }
+        Err(_e) => {}
     }
     wak_context.game.as_mut().unwrap().vars.menu_open = false;
-    
+
     wak_context.game.as_mut().unwrap().start_world();
     wak_context.game.as_mut().unwrap().set_mouse_focused(true);
-    wak_context.game.as_mut().unwrap().window.write().unwrap().set_cursor_mode(glfw::CursorMode::Disabled);
+    wak_context
+        .game
+        .as_mut()
+        .unwrap()
+        .window
+        .write()
+        .unwrap()
+        .set_cursor_mode(glfw::CursorMode::Disabled);
     unsafe {
         uncapkb.store(true, std::sync::atomic::Ordering::Relaxed);
     }
-    
+
     while !wak_context.window.read().unwrap().should_close() {
         wak_context.run();
     }
 
-    unsafe { SHOULDRUN = false; }
+    unsafe {
+        SHOULDRUN = false;
+    }
 }

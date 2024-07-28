@@ -58,8 +58,6 @@ use std::io::Write;
 
 pub type LightColor = glam::U16Vec3;
 
-
-
 pub static check_for_intercepting: Lazy<Queue<vec::IVec3>> = Lazy::new(|| Queue::new());
 
 #[derive(Clone)]
@@ -224,7 +222,7 @@ pub struct ReadyMesh {
     pub newlength: i32,
     pub newtlength: i32,
     pub newvlength: i32,
-    pub newwvlength: i32
+    pub newwvlength: i32,
 }
 
 impl ReadyMesh {
@@ -234,7 +232,7 @@ impl ReadyMesh {
         newlength: i32,
         newtlength: i32,
         newvlength: i32,
-        newwvlength: i32
+        newwvlength: i32,
     ) -> ReadyMesh {
         ReadyMesh {
             geo_index: index,
@@ -242,7 +240,7 @@ impl ReadyMesh {
             newlength,
             newtlength,
             newvlength,
-            newwvlength
+            newwvlength,
         }
     }
 }
@@ -639,12 +637,7 @@ impl ChunkSystem {
         info!("After making new chunk stuff");
     }
 
-    pub fn new(
-        radius: u8,
-        seed: u32,
-        noisetype: usize,
-        headless: bool
-    ) -> ChunkSystem {
+    pub fn new(radius: u8, seed: u32, noisetype: usize, headless: bool) -> ChunkSystem {
         let mut cs = ChunkSystem {
             chunks: Vec::new(),
             geobank: Vec::new(),
@@ -904,12 +897,6 @@ impl ChunkSystem {
         }
     }
 
-
-
-
-
-
-
     pub fn set_block_and_queue_rerender_no_sound(
         &self,
         spot: vec::IVec3,
@@ -946,10 +933,6 @@ impl ChunkSystem {
         }
     }
 
-
-
-
-
     pub fn set_block(&self, spot: vec::IVec3, block: u32, user_power: bool) {
         match user_power {
             true => {
@@ -964,29 +947,23 @@ impl ChunkSystem {
         if !self.headless {
             if block == 0 {
                 let wastherebits = self.blockat(spot) & Blocks::block_id_bits();
-unsafe {
-    let _ = AUDIOPLAYER.play_next_in_series(
-                                Blocks::get_place_series(wastherebits),
-                                &Vec3::new(spot.x as f32, spot.y as f32, spot.z as f32),
-                                &Vec3::ZERO,
-                                0.5,
-                            );
-}
-       
-                            
-
-
+                unsafe {
+                    let _ = AUDIOPLAYER.play_next_in_series(
+                        Blocks::get_place_series(wastherebits),
+                        &Vec3::new(spot.x as f32, spot.y as f32, spot.z as f32),
+                        &Vec3::ZERO,
+                        0.5,
+                    );
+                }
             } else {
-            unsafe {
-                 let _ = AUDIOPLAYER.play_next_in_series(
-                                Blocks::get_place_series(block & Blocks::block_id_bits()),
-                                &Vec3::new(spot.x as f32, spot.y as f32, spot.z as f32),
-                                &Vec3::ZERO,
-                                0.5,
-                            );
-            }
-                           
-
+                unsafe {
+                    let _ = AUDIOPLAYER.play_next_in_series(
+                        Blocks::get_place_series(block & Blocks::block_id_bits()),
+                        &Vec3::new(spot.x as f32, spot.y as f32, spot.z as f32),
+                        &Vec3::ZERO,
+                        0.5,
+                    );
+                }
             }
         }
     }
@@ -1166,8 +1143,7 @@ unsafe {
                 };
                 drop(my_ray_here);
                 drop(inner_light_seg);
-            }
-            else {
+            } else {
                 let chunkcoordoforigin = Self::spot_to_chunk_pos(&origin);
                 let chunkcoordhere = Self::spot_to_chunk_pos(&n.1);
 
@@ -1296,7 +1272,6 @@ unsafe {
 
         let lmarc = self.lightmap.clone();
 
-
         for x in 0..CW {
             for z in 0..CW {
                 for y in 0..CH {
@@ -1369,8 +1344,6 @@ unsafe {
             self.lightpass_on_chunk(chunklock.pos);
         }
 
-        
-
         let doorbottomuvs = DoorInfo::get_door_uvs(TextureFace::new(11, 0));
         let doortopuvs = DoorInfo::get_door_uvs(TextureFace::new(11, 1));
 
@@ -1388,7 +1361,6 @@ unsafe {
 
         let mut vdata = geobankarc.vdata.lock().unwrap();
         let mut uvdata = geobankarc.uvdata.lock().unwrap();
-
 
         let mut wvdata = geobankarc.wvdata.lock().unwrap();
         let mut wuvdata = geobankarc.wuvdata.lock().unwrap();
@@ -1459,19 +1431,9 @@ unsafe {
                     //     }
                     // }
                     if block != 0 {
-                        if !weatherstoptops.contains_key(&vec::IVec2 {
-                            x: i,
-                            y: k,
-                        }) {
-                            weatherstoptops.insert(
-                                vec::IVec2 {
-                                    x: i,
-                                    y: k,
-                                },
-                                spot.y,
-                            );
+                        if !weatherstoptops.contains_key(&vec::IVec2 { x: i, y: k }) {
+                            weatherstoptops.insert(vec::IVec2 { x: i, y: k }, spot.y);
                         }
-                        
 
                         if block == 19 {
                             let direction = Blocks::get_direction_bits(flags);
@@ -1561,7 +1523,7 @@ unsafe {
                             }
 
                             uvdata.extend_from_slice(&LadderInfo::get_ladder_uvs());
-                        } else if block == 45 { 
+                        } else if block == 45 {
                             let direction = Blocks::get_direction_bits(flags);
 
                             let modelindex: i32 = direction as i32;
@@ -1584,8 +1546,8 @@ unsafe {
                                 0b0000_0000_0000_0000_0000_0000_0000_0000 | (packedrgb) as u32;
                             drop(lmlock);
 
-                            for vert in
-                                ConveyorInfo::conveyor_model_from_index(modelindex as usize).chunks(5)
+                            for vert in ConveyorInfo::conveyor_model_from_index(modelindex as usize)
+                                .chunks(5)
                             {
                                 vdata.extend_from_slice(&[
                                     vert[0] + spot.x as f32,
@@ -1913,26 +1875,19 @@ unsafe {
                 }
 
                 //BEGIN ADD WEATHER PANES FOR RAIN/SNOW/ETC, nOT EVERY BLOCK
-                
-                if ((i * CW) + k) % 17 == 0  {
-                    let topy = match weatherstoptops.get(&vec::IVec2 {
-                        x: i,
-                        y: k,
-                    }) {
+
+                if ((i * CW) + k) % 17 == 0 {
+                    let topy = match weatherstoptops.get(&vec::IVec2 { x: i, y: k }) {
                         Some(top) => {
                             //println!("Found top {}", *top);
                             *top
                         }
-                        None => {
-                            0
-                        }
+                        None => 0,
                     };
 
                     let mut rng = StdRng::from_entropy();
-                    
+
                     let xzoff = Vec2::new(rng.gen_range(0.0..1.7), rng.gen_range(0.0..1.7));
-
-
 
                     //spot xz top
                     let spoint: IVec3 = vec::IVec3 {
@@ -1943,18 +1898,14 @@ unsafe {
 
                     //spot xz top
                     let spo = Vec3 {
-                        x: (chunklock.pos.x * CW) as f32 + i as f32+ xzoff.x,
+                        x: (chunklock.pos.x * CW) as f32 + i as f32 + xzoff.x,
                         y: topy as f32,
                         z: (chunklock.pos.y * CW) as f32 + k as f32 + xzoff.y,
                     };
 
-
-
-                    //LET BLOCKLIGHT AT TOP 
-                    //FADE BLOCKLIGHT WITH HIGHER Y IN SHADER 
+                    //LET BLOCKLIGHT AT TOP
+                    //FADE BLOCKLIGHT WITH HIGHER Y IN SHADER
                     //OR JUST SET TO <AMB> AT TOP SO IT FADES UP NATURALLY FROM VERTEX SHADING
-
-
 
                     let lmlock = self.lightmap.lock().unwrap();
                     let blocklighthere = match lmlock.get(&(spoint + IVec3::new(0, 1, 0))) {
@@ -1968,89 +1919,233 @@ unsafe {
                         blocklighthere.z,
                     );
 
-                    let prgb: u32 =
-                        0b0000_0000_0000_0000_0000_0000_0000_0000 | (packedrgb) as u32;
+                    let prgb: u32 = 0b0000_0000_0000_0000_0000_0000_0000_0000 | (packedrgb) as u32;
                     drop(lmlock);
 
-                  
-                    let lightf32 =  f32::from_bits(prgb);
-                   
-
-                    
+                    let lightf32 = f32::from_bits(prgb);
 
                     let face = TextureFace::new(15, 0);
 
-                    
-
                     wvdata.extend_from_slice(&[
-                        spo.x as f32 - 1.0, spo.y as f32, spo.z as f32,              lightf32 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 + 2.0, spo.y as f32, spo.z as f32 + 2.0,   lightf32 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 + 2.0, spo.y as f32 + 128.0, spo.z as f32 + 2.0,   0.0 /*BLOCKLIGHT */, 14.0,
-
-                        spo.x as f32 + 2.0, spo.y as f32 + 128.0, spo.z as f32 + 2.0,   0.0 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 - 1.0, spo.y as f32 + 128.0, spo.z as f32,   0.0 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 - 1.0, spo.y as f32, spo.z as f32,              lightf32 /*BLOCKLIGHT */, 14.0,
-
-
-
-
-                        spo.x as f32 + 2.0, spo.y as f32, spo.z as f32 + 2.0,   lightf32 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 - 1.0, spo.y as f32, spo.z as f32,              lightf32 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 - 1.0, spo.y as f32 + 128.0, spo.z as f32,   0.0 /*BLOCKLIGHT */, 14.0,
-
-                        spo.x as f32 - 1.0, spo.y as f32 + 128.0, spo.z as f32,   0.0 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 + 2.0, spo.y as f32 + 128.0, spo.z as f32 + 2.0,   0.0 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 + 2.0, spo.y as f32, spo.z as f32 + 2.0,   lightf32 /*BLOCKLIGHT */, 14.0,
-
-
-                        spo.x as f32 - 1.0, spo.y as f32, spo.z as f32 + 2.0,              lightf32 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 + 2.0, spo.y as f32, spo.z as f32,              lightf32 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 + 2.0, spo.y as f32 + 128.0, spo.z as f32,              0.0 /*BLOCKLIGHT */, 14.0,
-
-                        spo.x as f32 + 2.0, spo.y as f32 + 128.0, spo.z as f32,              0.0 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 - 1.0, spo.y as f32 + 128.0, spo.z as f32 + 2.0,              0.0 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 - 1.0, spo.y as f32, spo.z as f32 + 2.0,              lightf32 /*BLOCKLIGHT */, 14.0,
-
-
-                        spo.x as f32 + 2.0, spo.y as f32, spo.z as f32,              lightf32 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 - 1.0, spo.y as f32, spo.z as f32 + 2.0,              lightf32 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 - 1.0, spo.y as f32 + 128.0, spo.z as f32 + 2.0,              0.0 /*BLOCKLIGHT */, 14.0,
-
-                        spo.x as f32 - 1.0, spo.y as f32 + 128.0, spo.z as f32 + 2.0,              0.0 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 + 2.0, spo.y as f32 + 128.0, spo.z as f32,              0.0 /*BLOCKLIGHT */, 14.0,
-                        spo.x as f32 + 2.0, spo.y as f32, spo.z as f32,              lightf32 /*BLOCKLIGHT */, 14.0,
-
+                        spo.x as f32 - 1.0,
+                        spo.y as f32,
+                        spo.z as f32,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32,
+                        spo.z as f32 + 2.0,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32 + 2.0,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32 + 2.0,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32,
+                        spo.z as f32,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32,
+                        spo.z as f32 + 2.0,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32,
+                        spo.z as f32,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32 + 2.0,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32,
+                        spo.z as f32 + 2.0,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32,
+                        spo.z as f32 + 2.0,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32,
+                        spo.z as f32,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32 + 2.0,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32,
+                        spo.z as f32 + 2.0,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32,
+                        spo.z as f32,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32,
+                        spo.z as f32 + 2.0,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32 + 2.0,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 - 1.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32 + 2.0,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32 + 128.0,
+                        spo.z as f32,
+                        0.0, /*BLOCKLIGHT */
+                        14.0,
+                        spo.x as f32 + 2.0,
+                        spo.y as f32,
+                        spo.z as f32,
+                        lightf32, /*BLOCKLIGHT */
+                        14.0,
                     ]);
 
-                    
                     wuvdata.extend_from_slice(&[
-                        face.blx, face.bly, 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bry, 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bly  - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bly   - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.blx, face.bly   - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.blx, face.bly, 0.0, 0.0,
-
-                        face.blx, face.bly, 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bry, 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bly  - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bly   - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.blx, face.bly   - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.blx, face.bly, 0.0, 0.0,
-
-                        face.blx, face.bly, 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bry, 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bly  - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bly   - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.blx, face.bly   - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.blx, face.bly, 0.0, 0.0,
-
-                        face.blx, face.bly, 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bry, 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bly  - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.brx + ONE_OVER_16 * 2.0, face.bly   - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.blx, face.bly   - TEXTURE_WIDTH * 128.0  , 0.0, 0.0,
-                        face.blx, face.bly, 0.0, 0.0,
+                        face.blx,
+                        face.bly,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bry,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bry,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bry,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bry,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.brx + ONE_OVER_16 * 2.0,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly - TEXTURE_WIDTH * 128.0,
+                        0.0,
+                        0.0,
+                        face.blx,
+                        face.bly,
+                        0.0,
+                        0.0,
                     ]);
 
                     //println!("{}", face.blx);
@@ -2095,7 +2190,7 @@ unsafe {
             data32.len() as i32,
             tdata32.len() as i32,
             vdata.len() as i32,
-            wvdata.len() as i32
+            wvdata.len() as i32,
         );
         let ugqarc = self.finished_user_geo_queue.clone();
         let gqarc = self.finished_geo_queue.clone();
@@ -2421,18 +2516,18 @@ unsafe {
                 - f64::max(y as f64 / 3.0, 0.0),
         );
 
-        let mut p2 = 0.5 + self.perlin.get([
-            (spot.x as f64 + 4500.0) / 150.0,
-            (spot.y as f64 + 5000.0) / 150.0,
-            (spot.z as f64 - 5000.0) / 150.0,
-        ]) * 1.0;
+        let mut p2 = 0.5
+            + self.perlin.get([
+                (spot.x as f64 + 4500.0) / 150.0,
+                (spot.y as f64 + 5000.0) / 150.0,
+                (spot.z as f64 - 5000.0) / 150.0,
+            ]) * 1.0;
 
         let p3 = (self.perlin.get([
             (spot.x as f64 - 1500.0) / 3500.0,
             (spot.z as f64 + 1000.0) / 3500.0,
-        ]) * 10.0).min(9.0);
-
-    
+        ]) * 10.0)
+            .min(9.0);
 
         p2 = f64::max(p2, 0.0);
         p2 = f64::min(p2, 1.0);
@@ -2544,7 +2639,6 @@ unsafe {
             return 15;
         }
 
-        
         let ret = match self.planet_type {
             1 => {
                 if self.noise_func2(spot) > 10.0 {
@@ -2553,7 +2647,6 @@ unsafe {
                     } else {
                         1
                     }
-
                 } else {
                     0
                 }
@@ -2596,24 +2689,18 @@ unsafe {
                             underdirt
                         }
                     } else {
-
-
                         if spot.y > (WL + 2.0) as i32
-                        || self.noise_func(spot + vec::IVec3 { x: 0, y: 5, z: 0 }) > 10.0
+                            || self.noise_func(spot + vec::IVec3 { x: 0, y: 5, z: 0 }) > 10.0
                         {
                             if self.noise_func(spot + vec::IVec3 { x: 0, y: 1, z: 0 }) < 10.0 {
                                 surface
                             } else {
                                 undersurface
                             }
-                            
                         } else {
                             beach
                         }
                     }
-
-
-                    
                 } else {
                     if spot.y < WL as i32 {
                         liquid

@@ -69,40 +69,48 @@ impl Camera {
         delta: &f32,
         speed_mult: f32,
     ) -> Vec3 {
-
         let mut xz_speed_mult = 1.2;
         unsafe {
-            if SPRINTING  {
+            if SPRINTING {
                 xz_speed_mult = 1.74;
             }
         }
-        
+
         let mut moving = false;
 
         if cs.forward {
             moving = true;
-            self.velocity += (self.direction * Vec3::new(1.0, 0.0, 1.0)).normalize() * xz_speed_mult * *delta * speed_mult;
+            self.velocity += (self.direction * Vec3::new(1.0, 0.0, 1.0)).normalize()
+                * xz_speed_mult
+                * *delta
+                * speed_mult;
         }
         if cs.left {
             moving = true;
-            self.velocity += (self.right * Vec3::new(xz_speed_mult, 0.0, xz_speed_mult)) * *delta * speed_mult;
+            self.velocity +=
+                (self.right * Vec3::new(xz_speed_mult, 0.0, xz_speed_mult)) * *delta * speed_mult;
         }
         if cs.back {
             moving = true;
-            self.velocity += (self.direction * Vec3::new(1.0, 0.0, 1.0)).normalize() * xz_speed_mult * -*delta * speed_mult;
+            self.velocity += (self.direction * Vec3::new(1.0, 0.0, 1.0)).normalize()
+                * xz_speed_mult
+                * -*delta
+                * speed_mult;
         }
         if cs.right {
             moving = true;
-            self.velocity += (self.right * Vec3::new(xz_speed_mult, 0.0, xz_speed_mult)) * -*delta * speed_mult;
+            self.velocity +=
+                (self.right * Vec3::new(xz_speed_mult, 0.0, xz_speed_mult)) * -*delta * speed_mult;
         }
         unsafe {
             MOVING = moving;
         }
         self.recalculate();
 
-        let closeness_to_stopped = (0.7 - Vec3::new(self.velocity.x, 0.0, self.velocity.z).length()).max(0.0);
+        let closeness_to_stopped =
+            (0.7 - Vec3::new(self.velocity.x, 0.0, self.velocity.z).length()).max(0.0);
 
-        let slipperiness: f32 = (0.70 -  closeness_to_stopped).max(0.001);
+        let slipperiness: f32 = (0.70 - closeness_to_stopped).max(0.001);
 
         self.velocity.x *= slipperiness.powf(*delta * speed_mult);
         self.velocity.z *= slipperiness.powf(*delta * speed_mult);

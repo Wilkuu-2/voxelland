@@ -1,9 +1,14 @@
-use std::{collections::HashMap, fs::File, io::{BufReader, Cursor, Read}, thread};
 use dashmap::DashMap;
 use glam::Vec3;
 use lockfree::queue::Queue;
 use once_cell::sync::Lazy;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, SpatialSink};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{BufReader, Cursor, Read},
+    thread,
+};
 use tracing::info;
 
 use crate::game::{AUDIOPLAYER, SHOULDRUN};
@@ -12,25 +17,22 @@ pub static mut FUNC_QUEUE: Lazy<Queue<FuncQueue>> = Lazy::new(|| Queue::new());
 
 enum FuncQueue {
     play_in_head(String),
-    play(String, Vec3, Vec3, f32)
+    play(String, Vec3, Vec3, f32),
 }
 
 #[derive(Debug)]
-pub struct AudioError {
-
-}
-
+pub struct AudioError {}
 
 pub struct SoundSeries {
     pub sounds: Vec<String>,
-    pub index: usize
+    pub index: usize,
 }
 
 impl SoundSeries {
     pub fn new(ids: Vec<String>) -> Self {
         Self {
             sounds: ids,
-            index: 0
+            index: 0,
         }
     }
 
@@ -41,46 +43,43 @@ impl SoundSeries {
 
 pub struct SoundSink {
     sink: SpatialSink,
-    worldpos: Vec3
+    worldpos: Vec3,
 }
 
 impl SoundSink {
-    pub fn new(stream: &OutputStreamHandle, worldpos: Vec3, camerapos: Vec3, cameraright: Vec3) -> Self {
+    pub fn new(
+        stream: &OutputStreamHandle,
+        worldpos: Vec3,
+        camerapos: Vec3,
+        cameraright: Vec3,
+    ) -> Self {
         Self {
-            sink: SpatialSink::try_new(stream, 
-                worldpos.into(), 
-                (camerapos - cameraright).into(), 
-                (camerapos + cameraright).into()).unwrap(),
-            worldpos
+            sink: SpatialSink::try_new(
+                stream,
+                worldpos.into(),
+                (camerapos - cameraright).into(),
+                (camerapos + cameraright).into(),
+            )
+            .unwrap(),
+            worldpos,
         }
     }
 }
 
 pub fn spawn_audio_thread() {
-    thread::spawn(|| {
-        unsafe {
-            while SHOULDRUN {
-                match FUNC_QUEUE.pop() {
-                    Some(f) => {
-                        match f {
-                            FuncQueue::play_in_head(f) => {
-                                AUDIOPLAYER._play_in_head(f);
-                            },
-                            FuncQueue::play(id, pos, vel, vol) => {
-                                AUDIOPLAYER._play(id, &pos, &vel, vol)
-                            },
-                        }
-                        
+    thread::spawn(|| unsafe {
+        while SHOULDRUN {
+            match FUNC_QUEUE.pop() {
+                Some(f) => match f {
+                    FuncQueue::play_in_head(f) => {
+                        AUDIOPLAYER._play_in_head(f);
                     }
-                    None => {
-
-                    }
-                }
+                    FuncQueue::play(id, pos, vel, vol) => AUDIOPLAYER._play(id, &pos, &vel, vol),
+                },
+                None => {}
             }
         }
     });
-    
-    
 }
 
 pub struct AudioPlayer {
@@ -89,12 +88,12 @@ pub struct AudioPlayer {
     sounds: HashMap<String, Vec<u8>>,
     sinks: HashMap<String, SoundSink>,
     headsinks: HashMap<String, Sink>,
-    serieslist: HashMap<String, SoundSeries>
+    serieslist: HashMap<String, SoundSeries>,
 }
 
 impl AudioPlayer {
     pub fn new() -> Result<Self, AudioError> {
-        let(stream, handle ) = OutputStream::try_default().unwrap();
+        let (stream, handle) = OutputStream::try_default().unwrap();
 
         Ok(AudioPlayer {
             output: handle,
@@ -102,13 +101,11 @@ impl AudioPlayer {
             sounds: HashMap::new(),
             sinks: HashMap::new(),
             headsinks: HashMap::new(),
-            serieslist: HashMap::new()
+            serieslist: HashMap::new(),
         })
     }
 
-    pub fn update(&mut self) {
-
-    }
+    pub fn update(&mut self) {}
 
     pub fn preload(&mut self, id: &'static str, file_path: &'static str) -> Result<(), AudioError> {
         self._preload(id.to_string(), file_path.to_string())
@@ -119,8 +116,12 @@ impl AudioPlayer {
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer).unwrap();
         self.sounds.insert(file_path.clone(), buffer);
-        self.sinks.insert(file_path.clone(), SoundSink::new(&self.output, Vec3::ZERO, Vec3::ZERO, Vec3::ZERO));
-        self.headsinks.insert(file_path.to_string(), Sink::try_new(&self.output).unwrap());
+        self.sinks.insert(
+            file_path.clone(),
+            SoundSink::new(&self.output, Vec3::ZERO, Vec3::ZERO, Vec3::ZERO),
+        );
+        self.headsinks
+            .insert(file_path.to_string(), Sink::try_new(&self.output).unwrap());
 
         Ok(())
     }
@@ -142,16 +143,17 @@ impl AudioPlayer {
         _vel: &Vec3,
         _vol: f32,
     ) -> Result<(), AudioError> {
-
         let soundname = match self.serieslist.get_mut(_series_name) {
             Some(mut series) => {
-
                 let ret = series.sounds[series.index].clone();
                 series.increment();
                 ret
-            }   
+            }
             None => {
-                info!("Sound series tried to play that we don't know, {}", _series_name);
+                info!(
+                    "Sound series tried to play that we don't know, {}",
+                    _series_name
+                );
                 String::new()
             }
         };
@@ -161,7 +163,6 @@ impl AudioPlayer {
         Ok(())
     }
 
-
     pub fn play_in_head(&mut self, id: &'static str) {
         unsafe { FUNC_QUEUE.push(FuncQueue::play_in_head(id.to_string())) };
     }
@@ -169,33 +170,24 @@ impl AudioPlayer {
     pub fn _play_in_head(&mut self, id: String) {
         let mut needtopreload = false;
         match self.sounds.get(&id.to_string()) {
-            Some(sound) => {
+            Some(sound) => match self.headsinks.get(&id.to_string()) {
+                Some(sink) => {
+                    let cursor = Cursor::new(sound.clone());
+                    let reader = BufReader::new(cursor);
+                    let source = Decoder::new(reader).unwrap();
 
+                    sink.stop();
 
-                match self.headsinks.get(&id.to_string()) {
-                    Some(sink) => {
-
-        
-                        let cursor = Cursor::new(sound.clone());
-                        let reader = BufReader::new(cursor);
-                        let source = Decoder::new(reader).unwrap();
-
-                        sink.stop();
-        
-                        sink.append(source);
-                        sink.set_volume(0.5);
-                    },
-                    None => {
-                        println!("There was a sound but no sink. This shouldn't happen");
-                    },
+                    sink.append(source);
+                    sink.set_volume(0.5);
                 }
-
-
-
+                None => {
+                    println!("There was a sound but no sink. This shouldn't happen");
+                }
             },
             None => {
                 needtopreload = true;
-            },
+            }
         }
 
         if needtopreload {
@@ -207,13 +199,10 @@ impl AudioPlayer {
                     println!("Couldn't play or preload {}", id);
                 }
             }
-            
         }
     }
 
-    pub fn stop_sound(&mut self, _id: &'static str) {
-
-    }
+    pub fn stop_sound(&mut self, _id: &'static str) {}
 
     pub fn play_stringname(&mut self, id: String, pos: &Vec3, vel: &Vec3, vol: f32) {
         unsafe { FUNC_QUEUE.push(FuncQueue::play(id, *pos, *vel, vol)) };
@@ -228,34 +217,28 @@ impl AudioPlayer {
         let mut needtopreload = false;
         match self.sounds.get(&id.to_string()) {
             Some(sound) => {
-
-
                 match self.sinks.get(&id.to_string()) {
                     Some(sink) => {
-
                         let sink = &sink.sink;
-        
+
                         let cursor = Cursor::new(sound.clone());
                         let reader = BufReader::new(cursor);
                         let source = Decoder::new(reader).unwrap();
 
                         //sink.stop();
-        
+
                         sink.append(source);
                         sink.set_emitter_position((*pos).into());
                         sink.set_volume(vol);
-                    },
+                    }
                     None => {
                         println!("There was a sound but no sink. This shouldn't happen");
-                    },
+                    }
                 }
-
-
-
-            },
+            }
             None => {
                 needtopreload = true;
-            },
+            }
         }
 
         if needtopreload {
@@ -267,20 +250,12 @@ impl AudioPlayer {
                     println!("Couldn't play or preload {}", id);
                 }
             }
-            
         }
-        
     }
 
-    pub fn cleanup_channels(&mut self) {
+    pub fn cleanup_channels(&mut self) {}
 
-    }
-
-    pub fn set_listener_attributes(
-        &mut self,
-        position: glam::Vec3,
-        right: glam::Vec3
-    ) {
+    pub fn set_listener_attributes(&mut self, position: glam::Vec3, right: glam::Vec3) {
         for entry in &self.sinks {
             let sink = entry.1;
             sink.sink.set_left_ear_position((position - right).into());

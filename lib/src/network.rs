@@ -1,16 +1,16 @@
-use std::fs::{self, File};
-use std::net::{TcpStream, ToSocketAddrs};
-use std::io::{self, Read, Write};
-use tracing::info;
-use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, Mutex, RwLock};
-use std::thread::{self, JoinHandle};
-use std::time::Duration;
 use bincode;
 use dashmap::DashMap;
 use glam::Vec3;
 use glfw::ffi::glfwGetTime;
 use lockfree::queue::Queue;
+use std::fs::{self, File};
+use std::io::{self, Read, Write};
+use std::net::{TcpStream, ToSocketAddrs};
+use std::sync::atomic::AtomicBool;
+use std::sync::{Arc, Mutex, RwLock};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
+use tracing::info;
 
 use uuid::Uuid;
 
@@ -20,8 +20,6 @@ use crate::game::UPDATE_THE_BLOCK_OVERLAY;
 use crate::modelentity::{direction_to_euler, ModelEntity};
 use crate::server_types::{self, Message, MessageType, MOB_BATCH_SIZE};
 use crate::statics::MY_MULTIPLAYER_UUID;
-
-
 
 pub struct NetworkConnector {
     pub stream: Option<Arc<Mutex<TcpStream>>>,
@@ -39,13 +37,20 @@ pub struct NetworkConnector {
     pub mycam: Arc<Mutex<Camera>>,
     pub shouldsend: Arc<AtomicBool>,
     pub pme: Arc<DashMap<Uuid, ModelEntity>>,
-    pub sendqueue: Arc<Queue<Message>>
+    pub sendqueue: Arc<Queue<Message>>,
 }
 
 impl NetworkConnector {
-    pub fn new(csys: &Arc<RwLock<ChunkSystem>>, commqueue: &Arc<Queue<Message>>, commqueue2: &Arc<Queue<Message>>, gkc: &Arc<DashMap<Uuid, Vec3>>,
-                my_uuid: &Arc<RwLock<Option<Uuid>>>, nsme: &Arc<DashMap<u32, ModelEntity>>, mycam: &Arc<Mutex<Camera>>, pme: &Arc<DashMap<Uuid, ModelEntity>>,
-                ) -> NetworkConnector {
+    pub fn new(
+        csys: &Arc<RwLock<ChunkSystem>>,
+        commqueue: &Arc<Queue<Message>>,
+        commqueue2: &Arc<Queue<Message>>,
+        gkc: &Arc<DashMap<Uuid, Vec3>>,
+        my_uuid: &Arc<RwLock<Option<Uuid>>>,
+        nsme: &Arc<DashMap<u32, ModelEntity>>,
+        mycam: &Arc<Mutex<Camera>>,
+        pme: &Arc<DashMap<Uuid, ModelEntity>>,
+    ) -> NetworkConnector {
         NetworkConnector {
             stream: None,
             recvthread: None,
@@ -62,7 +67,7 @@ impl NetworkConnector {
             mycam: mycam.clone(),
             shouldsend: Arc::new(AtomicBool::new(false)),
             pme: pme.clone(),
-            sendqueue: Arc::new(Queue::new())
+            sendqueue: Arc::new(Queue::new()),
         }
     }
 
@@ -77,7 +82,7 @@ impl NetworkConnector {
     }
 
     pub fn sendto(message: &Message, stream: &Arc<Mutex<TcpStream>>) {
-       // info!("Sending a {}", message.message_type);
+        // info!("Sending a {}", message.message_type);
         let serialized_message = bincode::serialize(message).unwrap();
         let mut stream_lock = stream.lock().unwrap();
         let mut attempts = 0;
@@ -90,7 +95,7 @@ impl NetworkConnector {
                     std::thread::sleep(Duration::from_millis(10));
                     attempts += 1;
                     if attempts > 50 {
-                        return ()
+                        return ();
                     }
                 }
                 Err(e) => return (),
@@ -99,18 +104,16 @@ impl NetworkConnector {
     }
 
     pub fn sendtolocked(message: &Message, stream: &mut TcpStream) {
-       // info!("Sending a {}", message.message_type);
+        // info!("Sending a {}", message.message_type);
         let serialized_message = bincode::serialize(message).unwrap();
         stream.write_all(&serialized_message).unwrap();
     }
 
-
-
     pub fn connect<A: ToSocketAddrs + Clone>(&mut self, address: A) {
-        self.shouldrun.store(true, std::sync::atomic::Ordering::Relaxed);
+        self.shouldrun
+            .store(true, std::sync::atomic::Ordering::Relaxed);
         const PACKET_SIZE: usize = 90000;
         let mut conned = false;
-
 
         while !conned {
             match TcpStream::connect(address.clone()) {
@@ -139,10 +142,8 @@ impl NetworkConnector {
                     let _nsmes = self.nsme.clone();
                     let pme = self.pme.clone();
 
-
                     let shouldsend = self.shouldsend.clone();
                     let shouldsend2 = self.shouldsend.clone();
-
 
                     let camclone = self.mycam.clone();
 
@@ -161,13 +162,12 @@ impl NetworkConnector {
                                     Some(t) => {
                                         NetworkConnector::sendto(&t, &stream);
                                     }
-                                    None => {
-
-                                    }
+                                    None => {}
                                 }
                                 let c = cam.lock().unwrap();
                                 let dir = direction_to_euler(c.direction);
-                                let mut message = Message::new(MessageType::PlayerUpdate, c.position, dir.y, 0);
+                                let mut message =
+                                    Message::new(MessageType::PlayerUpdate, c.position, dir.y, 0);
                                 message.infof = c.pitch;
                                 message.info2 = c.yaw as u32;
                                 drop(c);
@@ -178,7 +178,6 @@ impl NetworkConnector {
                         }
                     }));
 
-                    
                     self.recvthread = Some(thread::spawn(move || {
                         let mut buffer = vec![0; PACKET_SIZE];
                         let csys = csys.clone();
@@ -187,14 +186,14 @@ impl NetworkConnector {
                         let shouldsend = shouldsend2.clone();
 
                         //NetworkConnector::sendto(&sumsg, &stream);
-                        
+
                         shouldsend.store(false, std::sync::atomic::Ordering::Relaxed);
-                        
+
                         let requdm = Message::new(MessageType::RequestUdm, Vec3::ZERO, 0.0, 0);
                         let reqseed = Message::new(MessageType::RequestSeed, Vec3::ZERO, 0.0, 0);
                         let reqpt = Message::new(MessageType::RequestPt, Vec3::ZERO, 0.0, 0);
                         let reqchest = Message::new(MessageType::ReqChestReg, Vec3::ZERO, 0.0, 0);
-                        
+
                         NetworkConnector::sendto(&requdm, &stream);
 
                         while sr.load(std::sync::atomic::Ordering::Relaxed) {
@@ -202,34 +201,31 @@ impl NetworkConnector {
 
                             let data_available = {
                                 match stream.try_lock() {
-                                    Ok(stream_lock) => {
-                                        stream_lock.peek(&mut temp_buffer).is_ok()
-                                    }
-                                    Err(_e) => {
-                                        false
-                                    }
+                                    Ok(stream_lock) => stream_lock.peek(&mut temp_buffer).is_ok(),
+                                    Err(_e) => false,
                                 }
-                                
                             };
 
                             if data_available {
                                 let mut stream_lock = stream.lock().unwrap();
 
-
-
-
                                 match stream_lock.read(&mut buffer) {
                                     Ok(size) if size > 0 => {
-                                        let comm: Message = match bincode::deserialize::<Message>(&buffer[..size]) {
+                                        let comm: Message = match bincode::deserialize::<Message>(
+                                            &buffer[..size],
+                                        ) {
                                             Ok(msg) => {
-
                                                 match msg.message_type {
                                                     MessageType::ChestInvUpdate => {
-                                                        info!("CIU incoming goose {}", Uuid::from_u64_pair(msg.goose.0, msg.goose.1));
+                                                        info!(
+                                                            "CIU incoming goose {}",
+                                                            Uuid::from_u64_pair(
+                                                                msg.goose.0,
+                                                                msg.goose.1
+                                                            )
+                                                        );
                                                     }
-                                                    _ => {
-
-                                                    }
+                                                    _ => {}
                                                 }
                                                 msg
                                             }
@@ -240,24 +236,21 @@ impl NetworkConnector {
 
                                         match comm.message_type {
                                             MessageType::Disconnect => {
-                                                pme.remove(&Uuid::from_u64_pair(comm.goose.0, comm.goose.1));
+                                                pme.remove(&Uuid::from_u64_pair(
+                                                    comm.goose.0,
+                                                    comm.goose.1,
+                                                ));
                                             }
                                             MessageType::ChestReg => {
-                                                
                                                 info!("Receiving ChestReg:");
 
                                                 if comm.info > 0 {
-
-
-
-
-
-
-                                                    let mut payload_buffer = vec![0u8; comm.info as usize];
+                                                    let mut payload_buffer =
+                                                        vec![0u8; comm.info as usize];
                                                     let mut total_read = 0;
 
                                                     let mut numtimes = 0;
-                        
+
                                                     while total_read < comm.info as usize {
                                                         match stream_lock.read(&mut payload_buffer[total_read..]) {
                                                             Ok(n) if n > 0 => total_read += n,
@@ -278,83 +271,78 @@ impl NetworkConnector {
                                                         numtimes += 1;
                                                         if numtimes > 100 {
                                                             numtimes = 0;
-                                                            NetworkConnector::sendtolocked(&reqchest, &mut stream_lock);
+                                                            NetworkConnector::sendtolocked(
+                                                                &reqchest,
+                                                                &mut stream_lock,
+                                                            );
                                                         }
                                                     }
-                        
-                                                    if total_read == comm.info as usize {
 
-                                                        info!("Got the expected bytes for chestreg");
-                                                        let mut file = File::create("chestdb").unwrap();
+                                                    if total_read == comm.info as usize {
+                                                        info!(
+                                                            "Got the expected bytes for chestreg"
+                                                        );
+                                                        let mut file =
+                                                            File::create("chestdb").unwrap();
                                                         file.write_all(&payload_buffer).unwrap();
 
-
-                                                        csys.write().unwrap().load_chests_from_file();
+                                                        csys.write()
+                                                            .unwrap()
+                                                            .load_chests_from_file();
                                                         //csys.write().unwrap().load_my_inv_from_file();
                                                         hpcommqueue.push(comm);
-                                                        recv_world_bool.store(true, std::sync::atomic::Ordering::Relaxed);
-                                                        shouldsend.store(true, std::sync::atomic::Ordering::Relaxed);
-                                                        
+                                                        recv_world_bool.store(
+                                                            true,
+                                                            std::sync::atomic::Ordering::Relaxed,
+                                                        );
+                                                        shouldsend.store(
+                                                            true,
+                                                            std::sync::atomic::Ordering::Relaxed,
+                                                        );
                                                     } else {
-
-
                                                         info!("Error receiving chestreg, trying again...");
-                                                        NetworkConnector::sendtolocked(&reqchest, &mut stream_lock);
+                                                        NetworkConnector::sendtolocked(
+                                                            &reqchest,
+                                                            &mut stream_lock,
+                                                        );
                                                     }
-
-
-
-
-
-
-                                                
-                                                    
                                                 } else {
-                                                    recv_world_bool.store(true, std::sync::atomic::Ordering::Relaxed);
-                                                    shouldsend.store(true, std::sync::atomic::Ordering::Relaxed);
+                                                    recv_world_bool.store(
+                                                        true,
+                                                        std::sync::atomic::Ordering::Relaxed,
+                                                    );
+                                                    shouldsend.store(
+                                                        true,
+                                                        std::sync::atomic::Ordering::Relaxed,
+                                                    );
                                                 }
-
-                                                
-                                                
-
                                             }
-                                            MessageType::ReqChestReg => {
+                                            MessageType::ReqChestReg => {}
+                                            MessageType::TellYouMyID => {}
+                                            MessageType::None => {}
+                                            MessageType::RequestUdm => {}
+                                            MessageType::RequestSeed => {}
 
-                                            }
-                                            MessageType::TellYouMyID => {
-
-                                            }
-                                            MessageType::None => {
-                                                
-                                            }
-                                            MessageType::RequestUdm => {
-
-                                            },
-                                            MessageType::RequestSeed => {
-                                                
-                                            },
-                                            
                                             MessageType::PlayerUpdate => {
-
-                                                
-
                                                 let newpos = Vec3::new(comm.x, comm.y, comm.z);
                                                 //let id = comm.info;
                                                 let _modind = comm.info2;
                                                 let rot = comm.rot;
                                                 let scale = 0.3;
 
-                                                let pme: Arc<DashMap<Uuid, ModelEntity>> = pme.clone();
+                                                let pme: Arc<DashMap<Uuid, ModelEntity>> =
+                                                    pme.clone();
 
-
-                                                let uuid = Uuid::from_u64_pair(comm.goose.0, comm.goose.1);
+                                                let uuid =
+                                                    Uuid::from_u64_pair(comm.goose.0, comm.goose.1);
 
                                                 //info!("Player update: {uuid}");
                                                 //info!("NSME Length: {}", nsme.len());
                                                 match pme.get_mut(&uuid) {
                                                     Some(mut me) => {
                                                         let modent = me.value_mut();
-                                                        (*modent).lastpos = (*modent).position.clone();
+                                                        (*modent).lastpos =
+                                                            (*modent).position.clone();
                                                         (*modent).position = newpos;
                                                         (*modent).scale = scale;
                                                         (*modent).lastrot = (*modent).rot.clone();
@@ -362,118 +350,115 @@ impl NetworkConnector {
                                                         unsafe {
                                                             (*modent).time_stamp = glfwGetTime();
                                                         }
-                                                        
-                                                        
                                                     }
                                                     None => {
                                                         commqueue.push(comm.clone());
                                                     }
                                                 };
-
-                                                
-                                            },
+                                            }
                                             MessageType::BlockSet => {
                                                 // if recv_m.info == 0 {
-                                                //     csys.read().unwrap().set_block_and_queue_rerender(IVec3::new(recv_m.x as i32, recv_m.y as i32, recv_m.z as i32), 
+                                                //     csys.read().unwrap().set_block_and_queue_rerender(IVec3::new(recv_m.x as i32, recv_m.y as i32, recv_m.z as i32),
                                                 //     recv_m.info, true, true);
                                                 // } else {
-                                                //     csys.read().unwrap().set_block_and_queue_rerender(IVec3::new(recv_m.x as i32, recv_m.y as i32, recv_m.z as i32), 
+                                                //     csys.read().unwrap().set_block_and_queue_rerender(IVec3::new(recv_m.x as i32, recv_m.y as i32, recv_m.z as i32),
                                                 //     recv_m.info, false, true);
                                                 // }
-                                                
-                                                
+
                                                 hpcommqueue.push(comm.clone());
-                                            },
+                                            }
                                             MessageType::MultiBlockSet => {
                                                 // if recv_m.info == 0 {
-                                                //     csys.read().unwrap().set_block_and_queue_rerender(IVec3::new(recv_m.x as i32, recv_m.y as i32, recv_m.z as i32), 
+                                                //     csys.read().unwrap().set_block_and_queue_rerender(IVec3::new(recv_m.x as i32, recv_m.y as i32, recv_m.z as i32),
                                                 //     recv_m.info, true, true);
                                                 // } else {
-                                                //     csys.read().unwrap().set_block_and_queue_rerender(IVec3::new(recv_m.x as i32, recv_m.y as i32, recv_m.z as i32), 
+                                                //     csys.read().unwrap().set_block_and_queue_rerender(IVec3::new(recv_m.x as i32, recv_m.y as i32, recv_m.z as i32),
                                                 //     recv_m.info, false, true);
                                                 // }
                                                 hpcommqueue.push(comm.clone());
-                                            },
+                                            }
                                             MessageType::Udm => {
                                                 info!("Receiving Udm:");
-                                                shouldsend.store(false, std::sync::atomic::Ordering::Relaxed);
-                                                
+                                                shouldsend.store(
+                                                    false,
+                                                    std::sync::atomic::Ordering::Relaxed,
+                                                );
+
                                                 stream_lock.set_nonblocking(false).unwrap();
-                                                
-
-
 
                                                 let mut buff = vec![0 as u8; comm.info as usize];
 
-                                                stream_lock.set_read_timeout(Some(Duration::from_secs(5)));
+                                                stream_lock
+                                                    .set_read_timeout(Some(Duration::from_secs(5)));
 
                                                 match stream_lock.read_exact(&mut buff) {
-
-
                                                     Ok(_) => {
                                                         info!("Got the expected bytes for udm");
                                                         let mut file = File::create("db").unwrap();
                                                         file.write_all(&buff).unwrap();
 
-                                                        NetworkConnector::sendtolocked(&reqseed, &mut stream_lock);
+                                                        NetworkConnector::sendtolocked(
+                                                            &reqseed,
+                                                            &mut stream_lock,
+                                                        );
                                                     }
                                                     Err(e) => {
-                                                        info!("Error receiving, trying again... {e}");
+                                                        info!(
+                                                            "Error receiving, trying again... {e}"
+                                                        );
                                                         thread::sleep(Duration::from_millis(1000));
-                                                        NetworkConnector::sendtolocked(&requdm, &mut stream_lock);
+                                                        NetworkConnector::sendtolocked(
+                                                            &requdm,
+                                                            &mut stream_lock,
+                                                        );
                                                     }
-
                                                 }
 
                                                 stream_lock.set_nonblocking(true).unwrap();
-                                            },
+                                            }
                                             MessageType::Seed => {
                                                 //info!("Receiving Seed:");
                                                 // let mut buff = vec![0 as u8; comm.info as usize];
 
                                                 // stream_lock.set_nonblocking(false).unwrap();
 
-
                                                 // stream_lock.read_exact(&mut buff).unwrap();
-
 
                                                 let recv_s = format!("{}", comm.info);
 
                                                 info!("Received seed: {}", recv_s);
 
                                                 // Create directory if not exists
-                                                    fs::create_dir_all("mp").unwrap();
+                                                fs::create_dir_all("mp").unwrap();
 
-                                                    // Create or open file for writing
-                                                    let mut file = File::create("mp/seed2").unwrap();
+                                                // Create or open file for writing
+                                                let mut file = File::create("mp/seed2").unwrap();
 
-                                                    // Write the received seed to the file
-                                                    file.write_all(recv_s.as_bytes()).unwrap();
-                                                    // Flush the buffer to ensure all data is written
-                                                    file.flush().unwrap();
+                                                // Write the received seed to the file
+                                                file.write_all(recv_s.as_bytes()).unwrap();
+                                                // Flush the buffer to ensure all data is written
+                                                file.flush().unwrap();
 
-                                                    // Verify if the content is correctly written
-                                                    let content = std::fs::read_to_string("mp/seed2").unwrap();
-                                                    info!("File content: {}", content);
+                                                // Verify if the content is correctly written
+                                                let content =
+                                                    std::fs::read_to_string("mp/seed2").unwrap();
+                                                info!("File content: {}", content);
 
+                                                commqueue.push(comm.clone());
 
-                                                        commqueue.push(comm.clone());
-                                                        
-                                                        thread::sleep(Duration::from_millis(200));
-                                                        NetworkConnector::sendtolocked(&reqpt, &mut stream_lock);
-
+                                                thread::sleep(Duration::from_millis(200));
+                                                NetworkConnector::sendtolocked(
+                                                    &reqpt,
+                                                    &mut stream_lock,
+                                                );
 
                                                 stream_lock.set_nonblocking(true).unwrap();
                                                 //info!("{}", recv_s);
-
-                                                
-                                            },
+                                            }
                                             MessageType::RequestTakeoff => {
                                                 commqueue.push(comm.clone());
-                                            },
-                                            MessageType::RequestPt => {
-                                                
-                                            },
+                                            }
+                                            MessageType::RequestPt => {}
                                             MessageType::Pt => {
                                                 //info!("Receiving Pt:");
                                                 // let mut buff = vec![0 as u8; comm.info as usize];
@@ -482,29 +467,25 @@ impl NetworkConnector {
 
                                                 // stream_lock.read_exact(&mut buff).unwrap();
 
-
                                                 fs::create_dir_all("mp").unwrap();
-                                                let mut file = File::create("mp/pt").unwrap(); 
+                                                let mut file = File::create("mp/pt").unwrap();
 
-                                                
                                                 let pt = comm.info;
                                                 let recv_s = format!("{pt}");
                                                 file.write_all(recv_s.as_bytes()).unwrap();
 
-
-
-
-                                                csys.write().unwrap().load_world_from_file(String::from("mp"));
+                                                csys.write()
+                                                    .unwrap()
+                                                    .load_world_from_file(String::from("mp"));
 
                                                 thread::sleep(Duration::from_millis(200));
-                                                NetworkConnector::sendtolocked(&reqchest, &mut stream_lock);
-                                                
-                            
-                                                //info!("{}", recv_s);
+                                                NetworkConnector::sendtolocked(
+                                                    &reqchest,
+                                                    &mut stream_lock,
+                                                );
 
-                                                
-                                                
-                                            },
+                                                //info!("{}", recv_s);
+                                            }
                                             MessageType::YourId => {
                                                 // //info!("Receiving Your ID:");
                                                 // stream_lock.set_nonblocking(false).unwrap();
@@ -517,44 +498,36 @@ impl NetworkConnector {
 
                                                 info!("My uuid, I am being told, is {uuid}");
 
-                                                gknowncams.insert(
-                                                    uuid.clone(), Vec3::ZERO
-                                                );
+                                                gknowncams.insert(uuid.clone(), Vec3::ZERO);
                                                 //*(my_uuid.write().unwrap()) = Some(uuid);
 
-
-                                                
                                                 // stream_lock.set_nonblocking(true).unwrap();
-                                            },
+                                            }
                                             MessageType::MobUpdate => {
-                                                
                                                 commqueue.push(comm.clone());
-                                                
-                                            },
+                                            }
                                             MessageType::NewMob => {
                                                 let _newid = comm.info;
 
                                                 let _newtype = comm.info2;
 
                                                 let _newpos = Vec3::new(comm.x, comm.y, comm.z);
-                                            },
+                                            }
                                             MessageType::WhatsThatMob => todo!(),
-                                            MessageType::ShutUpMobMsgs =>  {
-                                                
-                                            },
+                                            MessageType::ShutUpMobMsgs => {}
                                             MessageType::MobUpdateBatch => {
                                                 //info!("Got MUB, count {}", comm.count);
                                                 if comm.count > server_types::MOB_BATCH_SIZE as u8 {
                                                     info!("Ignoring invalid mobbatch with count > {} of {}", server_types::MOB_BATCH_SIZE, comm.count);
                                                 } else {
-                                                    for i in 0..comm.count.min(MOB_BATCH_SIZE as u8) {
-                                                        
-                                                        let msg = Message::from_mob_message(&comm.msgs[i as usize]);
+                                                    for i in 0..comm.count.min(MOB_BATCH_SIZE as u8)
+                                                    {
+                                                        let msg = Message::from_mob_message(
+                                                            &comm.msgs[i as usize],
+                                                        );
                                                         commqueue.push(msg);
                                                     }
                                                 }
-                                                        
-            
                                             }
                                             MessageType::TimeUpdate => {
                                                 commqueue.push(comm.clone());
@@ -562,7 +535,7 @@ impl NetworkConnector {
                                             MessageType::ChestInvUpdate => {
                                                 //info!("Receiving CIU from goose {}", Uuid::from_u64_pair(comm.goose.0, comm.goose.1));
                                                 hpcommqueue.push(comm.clone());
-                                            },
+                                            }
                                         }
 
                                         //info!("Received message from server: {:?}", recv_m);
@@ -587,6 +560,5 @@ impl NetworkConnector {
             }
         }
         //let tcp_stream = TcpStream::connect(address).unwrap();
-        
     }
 }

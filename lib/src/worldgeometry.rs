@@ -1,31 +1,31 @@
 use std::sync::Mutex;
 
-use tracing::info;
 use crate::shader::Shader;
 use gl;
 use gl::types::{GLsizei, GLsizeiptr, GLuint, GLvoid};
+use tracing::info;
 
 pub struct WorldGeometry {}
 
 impl WorldGeometry {
-
-    pub fn bind_old_geometry_no_upload(
-        vbov: GLuint,
-        vbouv: GLuint,
-        shader: &Shader,
-    ) {
+    pub fn bind_old_geometry_no_upload(vbov: GLuint, vbouv: GLuint, shader: &Shader) {
         unsafe {
-
-
             // Bind vertex buffer to the vertex array object
-            gl::VertexArrayVertexBuffer(shader.vao, 0, vbov, 0, (5 * std::mem::size_of::<f32>()) as GLsizei);
+            gl::VertexArrayVertexBuffer(
+                shader.vao,
+                0,
+                vbov,
+                0,
+                (5 * std::mem::size_of::<f32>()) as GLsizei,
+            );
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 info!("OpenGL Error after associating vbov with vao: {}", error);
             }
 
             // Position attribute
-            let pos_attrib = gl::GetAttribLocation(shader.shader_id, b"position\0".as_ptr() as *const i8);
+            let pos_attrib =
+                gl::GetAttribLocation(shader.shader_id, b"position\0".as_ptr() as *const i8);
             gl::EnableVertexArrayAttrib(shader.vao, pos_attrib as GLuint);
             gl::VertexArrayAttribFormat(
                 shader.vao,
@@ -38,7 +38,8 @@ impl WorldGeometry {
             gl::VertexArrayAttribBinding(shader.vao, pos_attrib as GLuint, 0);
 
             // Block brightness attribute
-            let brightness_attrib = gl::GetAttribLocation(shader.shader_id, b"blockRgb\0".as_ptr() as *const i8);
+            let brightness_attrib =
+                gl::GetAttribLocation(shader.shader_id, b"blockRgb\0".as_ptr() as *const i8);
             gl::EnableVertexArrayAttrib(shader.vao, brightness_attrib as GLuint);
             gl::VertexArrayAttribIFormat(
                 shader.vao,
@@ -50,7 +51,8 @@ impl WorldGeometry {
             gl::VertexArrayAttribBinding(shader.vao, brightness_attrib as GLuint, 0);
 
             // Ambient brightness attribute
-            let amb_brightness = gl::GetAttribLocation(shader.shader_id, b"ambientBright\0".as_ptr() as *const i8);
+            let amb_brightness =
+                gl::GetAttribLocation(shader.shader_id, b"ambientBright\0".as_ptr() as *const i8);
             gl::EnableVertexArrayAttrib(shader.vao, amb_brightness as GLuint);
             gl::VertexArrayAttribFormat(
                 shader.vao,
@@ -62,9 +64,14 @@ impl WorldGeometry {
             );
             gl::VertexArrayAttribBinding(shader.vao, amb_brightness as GLuint, 0);
 
-
             // Bind UV buffer to the vertex array object
-            gl::VertexArrayVertexBuffer(shader.vao, 1, vbouv, 0, (4 * std::mem::size_of::<f32>()) as GLsizei);
+            gl::VertexArrayVertexBuffer(
+                shader.vao,
+                1,
+                vbouv,
+                0,
+                (4 * std::mem::size_of::<f32>()) as GLsizei,
+            );
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 info!("OpenGL Error after associating vbouv with vao: {}", error);
@@ -97,7 +104,7 @@ impl WorldGeometry {
             // gl::VertexArrayAttribBinding(shader.vao, uv_attrib2 as GLuint, 1);
         }
     }
-    
+
     pub fn bind_old_geometry(
         vbov: GLuint,
         vbouv: GLuint,
@@ -117,16 +124,23 @@ impl WorldGeometry {
             if error != gl::NO_ERROR {
                 info!("Bind world geom err (vbov): {}", error);
             }
-    
+
             // Bind vertex buffer to the vertex array object
-            gl::VertexArrayVertexBuffer(shader.vao, 0, vbov, 0, (5 * std::mem::size_of::<f32>()) as GLsizei);
+            gl::VertexArrayVertexBuffer(
+                shader.vao,
+                0,
+                vbov,
+                0,
+                (5 * std::mem::size_of::<f32>()) as GLsizei,
+            );
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 info!("OpenGL Error after associating vbov with vao: {}", error);
             }
-    
+
             // Position attribute
-            let pos_attrib = gl::GetAttribLocation(shader.shader_id, b"position\0".as_ptr() as *const i8);
+            let pos_attrib =
+                gl::GetAttribLocation(shader.shader_id, b"position\0".as_ptr() as *const i8);
             if pos_attrib == -1 {
                 info!("Error: position attribute not found in shader.");
             } else {
@@ -141,9 +155,10 @@ impl WorldGeometry {
                 );
                 gl::VertexArrayAttribBinding(shader.vao, pos_attrib as GLuint, 0);
             }
-    
+
             // Block brightness attribute
-            let brightness_attrib = gl::GetAttribLocation(shader.shader_id, b"blockRgb\0".as_ptr() as *const i8);
+            let brightness_attrib =
+                gl::GetAttribLocation(shader.shader_id, b"blockRgb\0".as_ptr() as *const i8);
             if brightness_attrib == -1 {
                 info!("Error: blockRgb attribute not found in shader.");
             } else {
@@ -157,9 +172,10 @@ impl WorldGeometry {
                 );
                 gl::VertexArrayAttribBinding(shader.vao, brightness_attrib as GLuint, 0);
             }
-    
+
             // Ambient brightness attribute
-            let amb_brightness = gl::GetAttribLocation(shader.shader_id, b"ambientBright\0".as_ptr() as *const i8);
+            let amb_brightness =
+                gl::GetAttribLocation(shader.shader_id, b"ambientBright\0".as_ptr() as *const i8);
             if amb_brightness == -1 {
                 info!("Error: ambientBright attribute not found in shader.");
             } else {
@@ -174,7 +190,7 @@ impl WorldGeometry {
                 );
                 gl::VertexArrayAttribBinding(shader.vao, amb_brightness as GLuint, 0);
             }
-    
+
             // Upload UV data to named buffer
             gl::NamedBufferData(
                 vbouv,
@@ -186,14 +202,20 @@ impl WorldGeometry {
             if error != gl::NO_ERROR {
                 info!("Bind world geom err (vbouv): {}", error);
             }
-    
+
             // Bind UV buffer to the vertex array object
-            gl::VertexArrayVertexBuffer(shader.vao, 1, vbouv, 0, (4 * std::mem::size_of::<f32>()) as GLsizei);
+            gl::VertexArrayVertexBuffer(
+                shader.vao,
+                1,
+                vbouv,
+                0,
+                (4 * std::mem::size_of::<f32>()) as GLsizei,
+            );
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 info!("OpenGL Error after associating vbouv with vao: {}", error);
             }
-    
+
             // UV attribute
             let uv_attrib = gl::GetAttribLocation(shader.shader_id, b"uv\0".as_ptr() as *const i8);
             if uv_attrib == -1 {
@@ -212,7 +234,7 @@ impl WorldGeometry {
             }
         }
     }
-    
+
     pub fn bind_geometry(
         vbo32: gl::types::GLuint,
         vbo8: gl::types::GLuint,
@@ -221,7 +243,7 @@ impl WorldGeometry {
         shader: &Shader,
         data: (&Mutex<Vec<u32>>, &Mutex<Vec<u8>>, &Mutex<Vec<u16>>),
     ) {
-        //info!("BInding geomery"); //Ah yes praise the lord when this is commented out it means nothing is wrong 
+        //info!("BInding geomery"); //Ah yes praise the lord when this is commented out it means nothing is wrong
         unsafe {
             if upload {
                 let datalock = data.0.lock().unwrap();
@@ -241,13 +263,7 @@ impl WorldGeometry {
                 }
             }
 
-            gl::VertexArrayVertexBuffer(
-                shader.vao,
-                0,
-                vbo32,
-                0,
-                std::mem::size_of::<u32>() as i32,
-            );
+            gl::VertexArrayVertexBuffer(shader.vao, 0, vbo32, 0, std::mem::size_of::<u32>() as i32);
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 info!("OpenGL Error after associating vbo32 with vao: {}", error);
@@ -290,16 +306,8 @@ impl WorldGeometry {
                 }
 
                 drop(data1lock);
-
-
             }
-            gl::VertexArrayVertexBuffer(
-                shader.vao,
-                1,
-                vbo8,
-                0,
-                std::mem::size_of::<u8>() as i32,
-            );
+            gl::VertexArrayVertexBuffer(shader.vao, 1, vbo8, 0, std::mem::size_of::<u8>() as i32);
             let error = gl::GetError();
             if error != gl::NO_ERROR {
                 info!("OpenGL Error after associating vbo8 with vao: {}", error);
@@ -341,7 +349,6 @@ impl WorldGeometry {
                 info!("OpenGL Error after associating vbo8 with vao: {}", error);
             }
             if upload {
-
                 let data2lock = data.2.lock().unwrap();
                 gl::NamedBufferData(
                     vbo8rgb,
@@ -357,7 +364,6 @@ impl WorldGeometry {
                         error
                     );
                 }
-
 
                 let u8rgb_attrib =
                     gl::GetAttribLocation(shader.shader_id, b"rgb\0".as_ptr() as *const i8)

@@ -32,16 +32,15 @@ impl PackedVertex {
         let r = r & 0b0000_1111;
         let g = g & 0b0000_1111;
         let b = b & 0b0000_1111;
-    
+
         // Shift the values to their respective positions
         let shifted_r = r << 8; // R in bits 8-11
         let shifted_g = g << 4; // G in bits 4-7
         let shifted_b = b << 0; // B in bits 0-3
-    
+
         // Combine the shifted values
         let sum8_bits = (shifted_r | shifted_g | shifted_b) as u16;
-    
+
         sum8_bits
     }
-
 }

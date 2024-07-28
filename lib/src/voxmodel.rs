@@ -1,9 +1,3 @@
-
-
-
-
-
-
 use vox_format::data::*;
 use vox_format::types::*;
 
@@ -17,5 +11,4 @@ impl JVoxModel {
             model: vox_format::from_file(path).unwrap(),
         }
     }
-
 }

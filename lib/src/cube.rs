@@ -81,7 +81,7 @@ impl Cube {
 
         return SIDES[side as usize].as_slice();
     }
-    pub fn get_amb_occul_spots(side: CubeSide, corner: u8) -> &'static [vec::IVec3; 3]{
+    pub fn get_amb_occul_spots(side: CubeSide, corner: u8) -> &'static [vec::IVec3; 3] {
         #[rustfmt::skip]
         static SPOTS: [[[vec::IVec3; 3]; 6]; 6] = [
     // left

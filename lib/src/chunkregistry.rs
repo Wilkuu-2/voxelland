@@ -1,18 +1,14 @@
-
-
 use gl::types::GLuint;
 
 use crate::{chunk::ChunkGeo, vec};
-
-
 
 pub struct ChunkMemory {
     pub used: bool,
 
     pub vbo8: gl::types::GLuint,
-    pub vbo32: gl::types::GLuint, 
+    pub vbo32: gl::types::GLuint,
     pub tvbo8: gl::types::GLuint,
-    pub tvbo32: gl::types::GLuint, 
+    pub tvbo32: gl::types::GLuint,
     pub vvbo: GLuint,
     pub uvvbo: GLuint,
 
@@ -27,7 +23,7 @@ pub struct ChunkMemory {
     pub vlength: i32,
     pub wvlength: i32,
 
-    pub pos: vec::IVec2
+    pub pos: vec::IVec2,
 }
 
 impl ChunkMemory {
@@ -51,7 +47,7 @@ impl ChunkMemory {
             tlength: 0,
             vlength: 0,
             wvlength: 0,
-            pos: *geo.pos.lock().unwrap()
+            pos: *geo.pos.lock().unwrap(),
         };
         //info!("ChunkMemory: {} {} {} {} {} {} {} {} {}", cm.used, cm.vbo8, cm.vbo32, cm.tvbo8, cm.tvbo32, cm.length, cm.tlength, cm.pos.x, cm.pos.y);
 
@@ -60,5 +56,5 @@ impl ChunkMemory {
 }
 
 pub struct ChunkRegistry {
-    pub memories: Vec<ChunkMemory>
+    pub memories: Vec<ChunkMemory>,
 }
